@@ -5,13 +5,13 @@ from zemwrapper import Wrapper
 app = Flask(__name__)
 
 
-# ZEMANTA API KEY - enter your API key here
+# Enter your Zemanta API key here
 zem_api_key = 'enter-your-api-key-here'
 
 
 @app.route("/service", methods=['POST', 'GET'])
 def suggest():
-	"""Calls Zemanta API and returns NIF format"""
+	"""Wrapper for Zemanta API providing output formats supported by rdflib"""
 	args = []
 	if request.method == 'POST':
 		args = request.form
@@ -24,7 +24,7 @@ def suggest():
 
 @app.route('/')
 def index():
-	return 'NIF wrapper for Zemanta API'
+	return '(NIF) wrapper for Zemanta API'
 
 if __name__ == '__main__':
 	app.run(debug=True)
