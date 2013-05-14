@@ -14,10 +14,8 @@ def suggest():
 	"""Calls Zemanta API and returns NIF format"""
 	args = []
 	if request.method == 'POST':
-		print "POST"
 		args = request.form
 	elif request.method == 'GET':
-		print "GET"
 		args = request.args
 	wrapper = Wrapper(zem_api_key, args)
 
