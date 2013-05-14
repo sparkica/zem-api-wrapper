@@ -35,6 +35,7 @@ class Wrapper():
 
 	def __init__(self, api_key, args):
 		self.args = args
+		self.format = "pretty-xml"
 		self.zem_args = {'method': 'zemanta.suggest',
 						'api_key': api_key,
 						'text': '',
@@ -63,6 +64,12 @@ class Wrapper():
 
 		if 'nif' in self.args:
 			nif = self.args['nif']
+
+		if 'format' in self.args and nif:
+			#if anything else than json is set when nif is true, set json for zemanta
+			self.format = self.args['format'] 
+			if self.format != 'json':
+				self.zem_args['format'] = 'json'
 		
 		return (status, msg)
 
@@ -71,7 +78,7 @@ class Wrapper():
 		
 		(status, msg) = self.parse_parameters()
 		if status == "error":
-			return self.generate_error_response(msg, "pretty-xml")
+			return self.generate_error_response(msg)
 		
 		nif = False
 
@@ -97,7 +104,7 @@ class Wrapper():
 		doc_id = URIRef(docuri)
 
 		
-		#NIF does not need all this data
+		# NIF is important only for markup part of the response
 		if nif:
 			self.graph.add((URIRef(doc_id + '#char=0'), RDF.type, NIF.Context))
 		else:
@@ -126,7 +133,7 @@ class Wrapper():
 		return self.graph.serialize(format="pretty-xml", encoding="utf-8")
 
 
-	# TODO: other optional parameters
+	# Other optional parameters for NIF
 	# nif = "true" | "nif-1.0" 
 	# format = "rdfxml" | "ntriples" | "turtle" | "n3" | "json" 
 	# prefix = uriprefix 
@@ -228,18 +235,13 @@ class Wrapper():
 			print "Target[type]: ", target['type']		
 			if target['type'] == 'rdf':
 				self.graph.add((object_id, OWL.sameAs, URIRef(target['url'])))
-				#	tx.attrib['rdf:about'] = "http://s.zemanta.com/obj/"  +m.hexdigest() #Object%i" % (n + 1)
-				#	tx = None
 			target_id = URIRef(target['url'])
 			self.graph.add((object_id, ZEM.target, target_id))
 			self.graph.add((target_id, RDF.type, ZEM.target))
 			self.graph.add((target_id, ZEM.title, Literal(target['title'])))
 			self.graph.add((target_id, ZEM.targetType, URIRef(ZEM_TARGETS + target['type'])))
 
-
-
-	#TODO: don't hardcode rdfxml, response depends on the format
-	def generate_error_response(self, msg, output_format):
+	def generate_error_response(self, msg):
 		
 		ERROR = Namespace("http://nlp2rdf.lod2.eu/schema/error/")
 
@@ -250,18 +252,7 @@ class Wrapper():
 		e_graph.add((error, ERROR.fatal, Literal(1)))
 		e_graph.add((error, ERROR.hasMessage, Literal(msg)))	
 	
-		#msg = """ 
-		#	<rdf:RDF 
-		#	  xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#" 
-		#	  xmlns:error="http://nlp2rdf.lod2.eu/schema/error/">
-		#	  <rdf:Description>
-		#	    <rdf:type rdf:resource="http://nlp2rdf.lod2.eu/schema/error/Error"/>
-		#	    <error:fatal>1</error:fatal>
-		#	    <error:hasMessage>There was an error.</error:hasMessage>
-		#	  </rdf:Description>
-		#	</rdf:RDF>
-		#			"""
-		return e_graph.serialize(format="pretty-xml", encoding="utf-8")
+		return e_graph.serialize(format=self.format, encoding="utf-8")
 
 	
 	def fake_zem_api_call(self):
