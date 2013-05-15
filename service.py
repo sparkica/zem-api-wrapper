@@ -24,7 +24,15 @@ def suggest():
 
 @app.route('/')
 def index():
-	return '(NIF) wrapper for Zemanta API'
+	""" Returns information about the wrapper in RDF format """	
+	args = []
+	if request.method == 'POST':
+		args = request.form
+	elif request.method == 'GET':
+		args = request.args
+	wrapper = Wrapper("",args)
+
+	return wrapper.get_info()
 
 if __name__ == '__main__':
 	app.run(debug=True)
