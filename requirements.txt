@@ -1,0 +1,9 @@
+Flask==0.9
+Jinja2==2.6
+Werkzeug==0.8.3
+html5lib==0.95
+isodate==0.4.9
+rdfextras==0.4
+rdflib==3.4.0
+rdflib-rdfjson==0.1
+simplejson==3.3.0
