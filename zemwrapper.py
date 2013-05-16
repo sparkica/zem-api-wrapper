@@ -376,8 +376,6 @@ class Wrapper():
 		info.add((wrapper_id, NS1.webserviceurl, Literal(" - Add URL here - ")))
 		info.add((wrapper_id, NS1.demo, Literal(" - Add URL here - ")))
 		info.add((wrapper_id, NS1.code, URIRef("https://github.com/sparkica/zem-api-wrapper")))
-		info.add((wrapper_id, URIRef(':title'), Literal("Zemanta")))
-		info.add((wrapper_id, URIRef(':content'), Literal(content)))
 
 		print self.format
 
