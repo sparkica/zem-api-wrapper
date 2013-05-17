@@ -2,7 +2,7 @@ Wrapper service for Zemanta API
 ===============
 
 * Supports NIF
-* Additional output formats for Zemanta: n3, ntriple, turtle
+* Additional output formats for Zemanta: n3, ntriples, turtle
 * Supports GET, POST
 
 Requirements
@@ -44,7 +44,7 @@ Use
 -------------
 
 With default server and port:
-    http://127.0.0.1:5000/service?[url encoded parameters]
+    http://127.0.0.1:5000/service
 
 Wrapper supports all Zemanta parameters and additional NIF parameters. You can set Zemanta api_key in the service.py or pass it as a parameter.
 
