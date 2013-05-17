@@ -72,7 +72,7 @@ Zemanta supports only plain text as an input, therefore nif parameter input-type
 ### Using the service as a NIF wrapper
 * set parameter _nif=true_
 * use either _input_ or _text_ parameter for supplying text
-* specify nif output format (see values above)
+* specify nif output format (see values in the table above)
 * provide your api_key
 
 Defaults for Zemanta API:
@@ -88,7 +88,7 @@ http://127.0.0.1:5000/service?input=I+Love+Berlin&format=n3&nif=true&api_key=you
 
 ### Using the service as a RDF wrapper
 * provide all required parameters specified in [Zemanta API documentation](http://developer.zemanta.com/docs/)
-* in addition to ouput formats specified there, you can also use _n3_, _ntriple_, or _turtle_
+* in addition to ouput formats specified there, you can also use _n3_, _ntriples_, or _turtle_
 
 Example:
 
