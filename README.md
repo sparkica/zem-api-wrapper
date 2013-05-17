@@ -1,4 +1,3 @@
-
 Wrapper service for Zemanta API
 ===============
 
@@ -25,13 +24,13 @@ Install
 -----------
 1. Set up and activate virtualenv
 
-    virtualenv mywrapper
+        virtualenv mywrapper
 
 2. Clone this repo in it
 
 3. Install dependencies using requirements.txt
 
-    pip install -r requirements.txt
+        pip install -r requirements.txt
 
 
 Run
