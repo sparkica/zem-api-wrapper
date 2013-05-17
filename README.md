@@ -42,8 +42,11 @@ To run the wrapper service run service.py. It starts by default on localhost on 
 
 Use
 -------------
+
+With default server and port:
+    http://127.0.0.1:5000/service?<url_encoded_parameters>
+
 Wrapper supports all Zemanta parameters and additional NIF parameters. You can set Zemanta api_key in the service.py or pass it as a parameter.
-Zemanta supports only plain text as an input, therefore nif parameter input-type is defaulted to _text_
 
 ### NIF parameters
 <table>
@@ -64,10 +67,12 @@ Zemanta supports only plain text as an input, therefore nif parameter input-type
   </tr>
 </table>
 
+Zemanta supports only plain text as an input, therefore nif parameter input-type is defaulted to _text_.
+
 ### Using the service as a NIF wrapper
 * set parameter _nif=true_
 * use either _input_ or _text_ parameter for supplying text
-* specify nif output format
+* specify nif output format (see values above)
 * provide your api_key
 
 Defaults for Zemanta API:
