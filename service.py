@@ -18,7 +18,8 @@ def suggest():
 	elif request.method == 'GET':
 		args = request.args
 	wrapper = Wrapper(zem_api_key, args)
-
+	
+	print "Here we are now..."
 	return wrapper.nlp2rdf()
 
 

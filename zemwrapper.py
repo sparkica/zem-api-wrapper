@@ -42,16 +42,17 @@ FORMAT_MAPPINGS = {
 	'json': 'rdf-json'
 }
 
+FORMATS_ZEMANTA = ['xml', 'json','wnjson', 'rdfxml']
+
 class Wrapper():
 
 	def __init__(self, api_key, args):
 		self.args = args
-		self.format = "pretty-xml"
+		self.format = "json"
+
 		self.nif = False
-		self.zem_args = {'method': 'zemanta.suggest',
-						'api_key': api_key,
-						'text': '',
-						'format': 'json'}
+		self.isGraph = False
+		self.zem_args = {}
 		self.graph = Graph()
 
 	# input-type = "text" it is always text
@@ -60,62 +61,84 @@ class Wrapper():
 		msg = ""
 		status = "ok"
 
-		if 'input-type' in self.args:
-			if self.args['input-type'] != 'text':
-				status = 'error'
-				msg = "Zemanta only supports plain text input."
-
-		# method= zemanta.suggest | zemanta.suggest_markup
-		if 'method' in self.args:
-			self.zem_args['method'] = self.args['method']
-		else:
-			self.zem_args['method'] = 'zemanta.suggest_markup'
-
-		# (NIF) input = "some text"  or (Zemanta) text = "some text" 
-		if 'input' in self.args:
-			self.zem_args['text'] = self.args['input']
-			if ('text' in self.args):
-				if self.args['input'] != self.args['text']:
-					msg = "Parameters input and text do not match. Set either input or text or set them both to same value."
-					status = "error"
-		elif 'text' in self.args:
-			self.zem_args['text'] = self.args['text']
-		else:
-			msg = "No text provided."
-			status = "error"
-
+		#NIF parameters
 		# nif = "true" | "nif-1.0"
 		if 'nif' in self.args:
 			self.nif = True
 
-		# output format = "rdfxml" | "ntriples" | "turtle" | "n3" | "json"  
-		if 'format' in self.args and self.nif:
-			#if anything else than json is set when nif is true, set json for zemanta
-			if self.args['format'] in FORMAT_MAPPINGS.keys():
-				self.format = FORMAT_MAPPINGS[self.args['format']]
-				self.zem_args['format'] = 'json'
-			else:
-				status = 'error'
-				msg = "Invalid output format. It should be one of the following: rdfxml, ntriples, turtle, n3, json."
-					
+		if self.nif:
 
-		# for demo requests (GET or POST)
-		if 'api_key' in self.args:
-			self.zem_args['api_key'] = self.args['api_key']
-		
+			# NIF PARAMETERS
+			# input-type = "text"
+			if 'input-type' in self.args:
+				if self.args['input-type'] != 'text':
+					status = 'error'
+					msg = "Zemanta only supports plain text input."
+
+			# NIF: input = "some text"
+			# Zemanta: text = "some text" 
+			if 'input' in self.args:
+				self.zem_args['text'] = self.args['input']
+				if ('text' in self.args):
+					if self.args['input'] != self.args['text']:
+						msg = "Parameters input and text do not match."
+						status = "error"
+			elif 'text' in self.args:
+				self.zem_args['text'] = self.args['text']
+			else:
+				msg = "No text is provided."
+				status = "error"
+
+			# output format = "rdfxml" | "ntriples" | "turtle" | "n3" | "json"  
+			if ('format' in self.args):
+				self.zem_args['format'] = 'json'
+				if self.args['format'] in FORMAT_MAPPINGS.keys():
+					self.format = FORMAT_MAPPINGS[self.args['format']]
+				else:
+					status = 'error'
+					msg = "Invalid output format. It should be one of the following: rdfxml, ntriples, turtle, n3, json."
+			else: 
+				status = 'error'
+				msg = "Please specify output format."
+
+			# Default zemanta parameters
+			if 'method' in self.args:
+				self.zem_args['method'] = self.args['method']
+			else:
+				self.zem_args['method'] = 'zemanta.suggest_markup' # default
+
+			if 'api_key' in self.args:
+				self.zem_args['api_key'] = self.args['api_key']
+
+		else:
+			self.zem_args = self.args
+
+			if 'format' in self.args:
+				#wrapper for turtle, n3, ntriples
+				if self.args['format'] not in FORMATS_ZEMANTA:
+					self.zem_args['format'] = 'json'
+					self.format = FORMAT_MAPPINGS[self.args['format']]
+					self.isGraph = True
+			else: #default format
+				self.zem_args['format'] = 'xml'
+
 		return (status, msg)
 
 
 	def nlp2rdf(self):
-		
+		"""Converts Zemanta result into triples and NIF format"""
 		(status, msg) = self.parse_parameters()
 		if status == "error":
 			return self.generate_error_response(msg)
 		
-
+		result = {} 
 		#make zem-api call
 		result = self.make_zem_api_request()
 
+		if self.isGraph == False:
+			return result
+
+		# Parse result into triples
 		rid = result['rid']
 		docuri = "http://d.zemanta.com/rid/%s" % (rid)
 
@@ -138,39 +161,24 @@ class Wrapper():
 		self.graph.bind('nif', NIF)
 		self.graph.bind('itsrdf', ITSRDF)
 
-		# NIF makes sense only for markup
+
 		if self.nif:
 			self.create_nif(doc_id, markup)
 		
-		else: # 'rdf' wrapper
-			# add document and bindings
+		else: 
 			self.create_document(doc_id, rid)
 
-			# adding content by zemanta.suggest
 			if result.has_key('articles'):
 				self.create_articles(result['articles'], doc_id)
-
 			if result.has_key('images'):
 				self.create_images(result['images'], doc_id)
-
 			if result.has_key('keywords'):
 				self.create_keywords(result['keywords'], doc_id)
-
 			if result.has_key('categories'):
 				self.create_categories(result['categories'], doc_id)
-
-			# content by zemanta.suggest_markup
 			if result.has_key('markup'):
 				self.create_markup(markup, doc_id)
 
-		if not self.nif:
-			if self.format == 'json' or self.format == 'jsonw':
-				return json.dumps(result, sort_keys=True, indent=4 * ' ')
-			else:
-				return result
-
-		# FORMATS supported by NIF
-		# "rdfxml" | "ntriples" | "turtle" | "n3" | "json"
 		return self.graph.serialize(format=self.format, encoding="utf-8")
 
 
@@ -187,19 +195,15 @@ class Wrapper():
 		# Entity linking
 		for n,k in enumerate(markup['links']):
 
-			#self.graph.add((link_id, ZEM.confidence, Literal(k['confidence'], datatype=XSD.float)))
-			#self.graph.add((link_id, ZEM.relevance, Literal(k['relevance'], datatype=XSD.float)))
-			#self.graph.add((link_id, ZEM.anchor, Literal(k['anchor'])))			
-
 			#first occurence of the entity
 			start_index = self.zem_args['text'].find(k['anchor'])
-			print "Anchor: ", k['anchor']
-			print "Start index: ", start_index
-
 			end_index = start_index + len(k['anchor'])
 
+			if start_index < 1:
+				msg = "Invalid entity start index."
+				return generate_error_response(msg)
+
 			entity_id = URIRef(doc_id+'#char=%i,%i' % (start_index, end_index))
-			print "Entity ID: ", entity_id
 			
 			self.graph.add((entity_id, RDF.type, NIF.String))
 			self.graph.add((entity_id, RDF.type, NIF.RFC5147String))
@@ -207,7 +211,8 @@ class Wrapper():
 			self.graph.add((entity_id, NIF.beginIndex, Literal(start_index, datatype=XSD.int)))
 			self.graph.add((entity_id, NIF.beginIndex, Literal(end_index, datatype = XSD.int)))
 			self.graph.add((entity_id, NIF.anchorOf, Literal(k['anchor'])))
-		
+			self.graph.add((entity_id, ITSRDF.taConfidence, Literal(k['confidence'], datatype=XSD.float)))
+
 			# entity types
 			for entity_type in k.get("entity_type", []):
 				self.graph.add((entity_id, ITSRDF.taClassRef, URIRef(FREEBASE.schema + entity_type)))
@@ -223,18 +228,15 @@ class Wrapper():
 					self.graph.add((target_id, RDF.type, ZEM.target))
 					self.graph.add((target_id, ZEM.targetType, URIRef(ZEM_TARGETS + target['type'])))
 
-		
-
 	def create_document(self, doc_id, rid):
+
 		#bindings
 		self.graph.add((doc_id, RDF.type, ZEM.Document))		
 		self.graph.add((doc_id, ZEM.text, Literal(self.zem_args['text'])))
-		#self.graph.add((doc_id, ZEM.signature, Literal(result['signature'])))
 		self.graph.add((doc_id, ZEM.rid, Literal(rid)))
 
 	
 	def create_articles(self, articles, doc_id):
-			#articles
 		for n,a in enumerate(articles):
 			article_id = URIRef('#Related%i' % (n+1))
 			self.graph.add((article_id, RDF.type, ZEM.Related))
@@ -257,7 +259,6 @@ class Wrapper():
 	def create_images(self, images, doc_id):
 		for n,a in enumerate(images):
 			image_id = URIRef("#Image%i" % (n + 1))
-			#self.graph.add((image_id, RDF.Description, Literal("#Image%i" % (n + 1))))
 			self.graph.add((image_id, RDF.type, ZEM.Image))
 			self.graph.add((image_id, ZEM.doc, doc_id))
 			self.graph.add((image_id, ZEM.description, Literal(a['description'])))
@@ -280,7 +281,6 @@ class Wrapper():
 	def create_keywords(self, keywords, doc_id):
 		for n,k in enumerate(keywords):
 			keyword_id =  URIRef("#Keyword%i" % (n + 1))
-			#self.graph.add((keyword_id, RDF.Description, Literal("#Keyword%i" % (n + 1))))
 			self.graph.add((keyword_id, RDF.type, ZEM.Keyword))
 			self.graph.add((keyword_id, ZEM.doc, doc_id))
 			self.graph.add((keyword_id, ZEM.confidence, Literal(k['confidence'], datatype = XSD.float)))
@@ -290,10 +290,8 @@ class Wrapper():
 	def create_categories(self, categories, doc_id):
 		for n, c in enumerate(categories):
 			category_id = URIRef("#Category %i" % (n + 1))
-			#self.graph.add((category_id,RDF.Description,Literal("#Category %i" % (n + 1))))
 			self.graph.add((category_id,RDF.type, ZEM.Category))
 			self.graph.add((category_id,ZEM.doc, doc_id))
-
 			self.graph.add((category_id,ZEM.confidence,Literal(c['confidence'], datatype = XSD.float)))
 			self.graph.add((category_id,ZEM.name, Literal(c['name'])))
 			self.graph.add((category_id,ZEM.categorization, Literal(c['categorization'])))
@@ -341,10 +339,12 @@ class Wrapper():
 	def make_zem_api_request(self):
 		gateway = 'http://api.zemanta.com/services/rest/0.0/'
 		args_enc = urllib.urlencode(self.zem_args)
-		print "Encoded arguments: ", args_enc
 		raw_output = urllib.urlopen(gateway, args_enc).read()
-		output = json.loads(raw_output)
 
+		if self.isGraph == False:
+			return raw_output
+
+		output = json.loads(raw_output)
 		if 'status' in output and output['status'] == 'ok':
 			return output
 		else:
@@ -356,28 +356,20 @@ class Wrapper():
 		
 		NS0 = Namespace("http://usefulinc.com/ns/doap#")
 		NS1 = Namespace("http://nlp2rdf.org/")
-		#NS2 = Namespace(":title")
-		#NS3 = Namespace(":content")
-
 		wrapper_id = URIRef(NS1 + 'implementations/zemanta')
 		BASE = Namespace(wrapper_id)
-
 
 		info.bind("rdf", RDF)
 		info.bind("ns0", NS0)
 		info.bind("ns1", NS1)
 
-		content = "NIF wrapper for Zemanta API."
-		
-		
+		content = "NIF wrapper for Zemanta API."		
 		info.add((wrapper_id, NS0.homepage, URIRef("http://www.zemanta.com")))
 		info.add((wrapper_id, NS1.additionalparameter, Literal("You need Zemanta API key. For other parameters check Zemanta API documentation.")))
 		info.add((wrapper_id, NS1.status, Literal("NIF 2.0 compliant without RDF/XML input and JSON output")))
 		info.add((wrapper_id, NS1.webserviceurl, Literal(" - Add URL here - ")))
 		info.add((wrapper_id, NS1.demo, Literal(" - Add URL here - ")))
 		info.add((wrapper_id, NS1.code, URIRef("https://github.com/sparkica/zem-api-wrapper")))
-
-		print self.format
 
 		return info.serialize(format=self.format, encoding="utf-8")
 
