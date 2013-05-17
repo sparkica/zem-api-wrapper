@@ -44,7 +44,7 @@ Use
 -------------
 
 With default server and port:
-    http://127.0.0.1:5000/service?<url_encoded_parameters>
+    http://127.0.0.1:5000/service?[url encoded parameters]
 
 Wrapper supports all Zemanta parameters and additional NIF parameters. You can set Zemanta api_key in the service.py or pass it as a parameter.
 
@@ -83,7 +83,7 @@ Examples:
 
 http://127.0.0.1:5000/service?input=I+Love+Berlin&format=n3&nif=true&api_key=your-api-key-here
 
-http://127.0.0.1:5000/service?input=I+Love+Berlin&format=n3&nif=true&api_key=your-api-key-here
+http://127.0.0.1:5000/service?text=I+Love+Berlin&format=n3&nif=true&api_key=your-api-key-here
 
 
 ### Using the service as a RDF wrapper
