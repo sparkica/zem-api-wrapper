@@ -36,4 +36,7 @@ def index():
 	return wrapper.get_info()
 
 if __name__ == '__main__':
-	app.run(debug=True)
+	SERVER_NAME = '127.0.0.1'
+	SERVER_PORT = 5000
+
+	app.run(SERVER_NAME, SERVER_PORT)
