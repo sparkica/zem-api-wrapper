@@ -66,7 +66,8 @@ class Wrapper():
 		if 'nif' in self.args:
 			self.nif = True
 
-		if self.nif:
+		if self.nif == True:
+			self.isGraph = True
 
 			# NIF PARAMETERS
 			# input-type = "text"
@@ -219,7 +220,6 @@ class Wrapper():
 
 			# targets
 			for target in k['target']:		
-				print "Target[type]: ", target['type']		
 				if target['type'] == 'rdf':
 					self.graph.add((entity_id, ITSRDF.taIdentRef, URIRef(target['url'])))
 				else:
